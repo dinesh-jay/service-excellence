@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: idempotent-consumer-example
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: idempotent-consumer-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.example.idempotent"
+        isolation.level: read_committed
+    listener:
+      ack-mode: manual
+
+  datasource:
+    url: jdbc:h2:mem:idempotent;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true

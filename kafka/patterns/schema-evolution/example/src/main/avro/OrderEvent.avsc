@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "OrderEvent",
+  "namespace": "com.example.schema.avro",
+  "fields": [
+    {
+      "name": "orderId",
+      "type": "string"
+    },
+    {
+      "name": "customerId",
+      "type": "string"
+    },
+    {
+      "name": "amount",
+      "type": "double"
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "default": "USD"
+    }
+  ]
+}
