@@ -28,6 +28,7 @@ Kafka is an **event streaming platform**, not a message queue. Treat topics as d
 | [idempotent-consumer](./patterns/idempotent-consumer/) | Deduplication strategies using message keys and idempotency stores |
 | [transactional-outbox](./patterns/transactional-outbox/) | Reliable event publishing without dual writes |
 | [dead-letter-handling](./patterns/dead-letter-handling/) | Routing poison pills to DLTs with retry policies |
+| [out-of-order-messages](./patterns/out-of-order-messages/) | Sequence-number reordering and buffering for misordered events |
 | [schema-evolution](./patterns/schema-evolution/) | Forward- and backward-compatible schema changes with Avro |
 | [spring-boot-starter](./spring-boot-starter/) | Opinionated auto-configuration for producers, consumers, and error handling |
 | [observability](./observability/) | Metrics, tracing, and health checks for Kafka workloads |

@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: out-of-order-messages-example
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ordering-consumer-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.example.ordering"
+        isolation.level: read_committed
+    listener:
+      ack-mode: manual
+
+  datasource:
+    url: jdbc:h2:mem:ordering;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
+
+  scheduling:
+    enabled: true
