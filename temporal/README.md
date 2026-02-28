@@ -26,9 +26,12 @@ Design every workflow for **determinism**: the same input must always produce th
 
 ## What's in This Library
 
-| Pattern | Description |
+| Section | Description |
 |---|---|
-| [map-reduce-child-workflows](./patterns/map-reduce-child-workflows/) | Fan-out work to child workflows, collect results in the parent (map-reduce) |
+| [patterns/](./patterns/) | Map-reduce with child workflows |
+| [anti-patterns/](./anti-patterns/) | Common mistakes and what to do instead |
+| [operational-excellence/](./operational-excellence/) | Metrics, visibility, health checks |
+| [spring-boot-starter/](./spring-boot-starter/) | Opinionated auto-configuration for Temporal with Spring Boot 4 |
 
 ## Tech Stack
 

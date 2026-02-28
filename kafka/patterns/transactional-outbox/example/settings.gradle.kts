@@ -1,1 +1,0 @@
-rootProject.name = "transactional-outbox-example"

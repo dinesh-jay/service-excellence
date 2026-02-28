@@ -5,39 +5,83 @@ An opinionated auto-configuration for production Kafka usage with Spring Boot 4.
 ## What It Provides
 
 - **Auto-commit disabled, manual ack mode** — you control when offsets are committed.
-- **Dead-letter topic routing** — failed messages go to `<topic>.DLT` after retries, not into the void.
+- **Dead-letter topic routing** — failed messages go to `<topic>.DLT` after retries.
 - **Exponential backoff retries** — 3 attempts with 1s/2s/4s backoff by default.
-- **JSON serde with type headers** — `JsonSerializer`/`JsonDeserializer` with trusted packages configured.
-- **Micrometer metrics** — `KafkaClientMetrics` auto-registered for consumer and producer JMX metrics.
+- **JSON serde with type headers** — `JsonSerializer`/`JsonDeserializer` with trusted packages.
+- **Micrometer metrics** — `KafkaClientMetrics` auto-registered.
 - **Idempotency support** — interface and JPA-based implementation for dedup checking.
-- **Read-committed isolation** — consumers only see committed transactional messages.
-
-## Usage
-
-Add the starter as a dependency:
-
-```kotlin
-dependencies {
-    implementation(project(":kafka-spring-boot-starter"))
-}
-```
-
-All defaults are applied via auto-configuration. No additional `@Bean` definitions needed.
 
 ## Configuration
 
-Override defaults via `application.yml`:
+```kotlin
+@ConfigurationProperties(prefix = "app.kafka")
+data class KafkaStarterProperties(
+    val retryAttempts: Int = 3,
+    val backoffInitialInterval: Long = 1000L,
+    val backoffMultiplier: Double = 2.0,
+    val dltEnabled: Boolean = true,
+    val trustedPackages: List<String> = listOf("*"),
+)
+```
+
+## Auto-Configuration
+
+```kotlin
+@AutoConfiguration
+@EnableConfigurationProperties(KafkaStarterProperties::class)
+class KafkaStarterAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    fun defaultErrorHandler(
+        properties: KafkaStarterProperties,
+        kafkaTemplate: KafkaTemplate<Any, Any>,
+    ): DefaultErrorHandler {
+        val backoff = ExponentialBackOff(properties.backoffInitialInterval, properties.backoffMultiplier)
+        val recoverer = if (properties.dltEnabled) DeadLetterPublishingRecoverer(kafkaTemplate) else null
+        return DefaultErrorHandler(recoverer, backoff)
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    fun kafkaListenerContainerFactory(
+        consumerFactory: ConsumerFactory<Any, Any>,
+        errorHandler: DefaultErrorHandler,
+    ): ConcurrentKafkaListenerContainerFactory<Any, Any> {
+        return ConcurrentKafkaListenerContainerFactory<Any, Any>().apply {
+            this.consumerFactory = consumerFactory
+            setCommonErrorHandler(errorHandler)
+            containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        }
+    }
+}
+```
+
+## Idempotency Support
+
+```kotlin
+interface IdempotencyChecker {
+    fun isProcessed(messageId: String): Boolean
+    fun markProcessed(messageId: String)
+}
+
+// JPA-backed implementation provided out of the box
+class JpaIdempotencyChecker(
+    private val repository: ProcessedKafkaMessageRepository,
+) : IdempotencyChecker { ... }
+```
+
+## Override Defaults
 
 ```yaml
 app:
   kafka:
-    retry-attempts: 5              # default: 3
-    backoff-initial-interval: 2000  # default: 1000ms
-    backoff-multiplier: 3.0         # default: 2.0
-    dlt-enabled: false              # default: true
-    trusted-packages:               # default: ["*"]
+    retry-attempts: 5
+    backoff-initial-interval: 2000
+    backoff-multiplier: 3.0
+    dlt-enabled: false
+    trusted-packages:
       - com.myapp.events
-      - com.myapp.commands
 ```
 
 ## Opinionated Defaults
@@ -51,6 +95,4 @@ app:
 | Backoff | Exponential 1s/2s/4s | Gives downstream time to recover |
 | DLT | Enabled | Failed messages are preserved, not dropped |
 
-## Overriding
-
-All beans are `@ConditionalOnMissingBean`. Define your own `DefaultErrorHandler`, `ConcurrentKafkaListenerContainerFactory`, or `KafkaClientMetrics` to replace the starter's defaults.
+All beans are `@ConditionalOnMissingBean`. Define your own to replace defaults.
