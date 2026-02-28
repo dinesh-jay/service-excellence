@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: map-reduce-child-workflows-example
+
+temporal:
+  service-address: localhost:7233
+  namespace: default
+  task-queue: batch-processing
