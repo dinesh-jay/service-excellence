@@ -28,10 +28,10 @@ Design every workflow for **determinism**: the same input must always produce th
 
 | Section | Description |
 |---|---|
-| [patterns/](./patterns/) | Map-reduce with child workflows |
-| [anti-patterns/](./anti-patterns/) | Common mistakes and what to do instead |
-| [operational-excellence/](./operational-excellence/) | Metrics, visibility, health checks |
-| [spring-boot-starter/](./spring-boot-starter/) | Opinionated auto-configuration for Temporal with Spring Boot 4 |
+| [1-operational-excellence/](./1-operational-excellence/) | Metrics, visibility, health checks |
+| [2-patterns/](./2-patterns/) | Map-reduce with child workflows |
+| [3-anti-patterns/](./3-anti-patterns/) | Common mistakes and what to do instead |
+| [4-spring-boot-starter/](./4-spring-boot-starter/) | Opinionated auto-configuration for Temporal with Spring Boot 4 |
 
 ## Tech Stack
 
