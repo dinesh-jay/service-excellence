@@ -10,7 +10,21 @@ Opinionated auto-configuration for Temporal with Spring Boot 4.
 - **Health indicator** — checks Temporal server connectivity via Actuator.
 - **Graceful shutdown** — `WorkerFactory` shuts down cleanly on application stop.
 
-## Configuration
+## Opinionated Defaults
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| Data converter | Jackson JSON | Kotlin data classes serialize cleanly |
+| Namespace | `default` | Single namespace for simplicity; override in production |
+| Shutdown | Graceful | `WorkerFactory.shutdown()` on bean destroy |
+
+All beans are `@ConditionalOnMissingBean`. Define your own to replace defaults.
+
+---
+
+## Code
+
+### Configuration Properties
 
 ```kotlin
 @ConfigurationProperties(prefix = "app.temporal")
@@ -21,7 +35,7 @@ data class TemporalStarterProperties(
 )
 ```
 
-## Auto-Configuration
+### Auto-Configuration
 
 ```kotlin
 @AutoConfiguration
@@ -60,7 +74,7 @@ class TemporalStarterAutoConfiguration {
 }
 ```
 
-## Usage
+### Usage Configuration
 
 ```yaml
 app:
@@ -69,6 +83,8 @@ app:
     namespace: default
     task-queue: my-task-queue
 ```
+
+### Worker Registration
 
 Register workflows and activities manually or via component scanning:
 
@@ -88,13 +104,3 @@ class WorkerRegistrar(
     }
 }
 ```
-
-## Opinionated Defaults
-
-| Setting | Value | Why |
-|---------|-------|-----|
-| Data converter | Jackson JSON | Kotlin data classes serialize cleanly |
-| Namespace | `default` | Single namespace for simplicity; override in production |
-| Shutdown | Graceful | `WorkerFactory.shutdown()` on bean destroy |
-
-All beans are `@ConditionalOnMissingBean`. Define your own to replace defaults.

@@ -6,17 +6,6 @@ Metrics, tracing, health checks, and alerting for production Kafka workloads.
 
 Use **Micrometer + KafkaClientMetrics** to expose consumer and producer JMX metrics as Micrometer gauges.
 
-```kotlin
-@Bean
-fun kafkaConsumerMetrics(
-    consumerFactory: ConsumerFactory<String, String>,
-    meterRegistry: MeterRegistry,
-): KafkaClientMetrics {
-    val consumer = consumerFactory.createConsumer()
-    return KafkaClientMetrics(consumer).also { it.bindTo(meterRegistry) }
-}
-```
-
 ### Key Metrics to Monitor
 
 | Metric | What It Tells You |
@@ -38,6 +27,38 @@ fun kafkaConsumerMetrics(
 
 Spring Boot 4 with Micrometer Tracing + OpenTelemetry propagates trace context through Kafka automatically.
 
+## Health Checks
+
+Spring Boot Actuator's built-in Kafka health indicator checks broker connectivity. For consumer lag health, implement a custom `HealthIndicator` that compares committed offsets against end offsets and reports unhealthy when lag exceeds a threshold.
+
+## Dashboards
+
+Recommended Grafana panels:
+1. Consumer lag by topic + partition (line chart)
+2. Consumed/produced records per second (line chart)
+3. DLT message count (stat panel with alert threshold)
+4. Consumer group rebalance events (event annotations)
+5. P99 processing latency (heatmap)
+
+---
+
+## Code
+
+### Kafka Client Metrics Bean
+
+```kotlin
+@Bean
+fun kafkaConsumerMetrics(
+    consumerFactory: ConsumerFactory<String, String>,
+    meterRegistry: MeterRegistry,
+): KafkaClientMetrics {
+    val consumer = consumerFactory.createConsumer()
+    return KafkaClientMetrics(consumer).also { it.bindTo(meterRegistry) }
+}
+```
+
+### Tracing Configuration
+
 ```yaml
 management:
   tracing:
@@ -48,9 +69,7 @@ management:
       endpoint: http://localhost:4318/v1/traces
 ```
 
-## Health Checks
-
-Spring Boot Actuator's built-in Kafka health indicator checks broker connectivity. For consumer lag health, implement a custom `HealthIndicator`:
+### Consumer Lag Health Indicator
 
 ```kotlin
 @Component
@@ -79,12 +98,3 @@ class ConsumerLagHealthIndicator(
     }
 }
 ```
-
-## Dashboards
-
-Recommended Grafana panels:
-1. Consumer lag by topic + partition (line chart)
-2. Consumed/produced records per second (line chart)
-3. DLT message count (stat panel with alert threshold)
-4. Consumer group rebalance events (event annotations)
-5. P99 processing latency (heatmap)

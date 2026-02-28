@@ -10,6 +10,21 @@ Temporal activities have execution time limits and no built-in parallelism withi
 
 ## How
 
+The parent workflow chunks the input list and starts a child workflow per chunk using `Async.function()`. It waits for all children with `Promise.allOf()`, then collects and aggregates the results.
+
+Each child workflow processes its chunk sequentially, calling activities for each item (validate, charge, fulfill). Activities contain the actual side effects.
+
+## Key Considerations
+
+- **Control parallelism** — do not start 10,000 child workflows at once. Batch into chunks.
+- **Deterministic child workflow IDs** — derive from parent ID + chunk index. Enables idempotent replays.
+- **Set timeouts on children** — use `WorkflowExecutionTimeout`. Without it, a stuck child blocks the parent indefinitely.
+- **Handle partial failures** — decide upfront: fail the entire batch or collect partial results.
+
+---
+
+## Code
+
 ### Parent Workflow — Fan Out and Aggregate
 
 ```kotlin
@@ -115,10 +130,3 @@ class TemporalConfig {
     }
 }
 ```
-
-## Key Considerations
-
-- **Control parallelism** — do not start 10,000 child workflows at once. Batch into chunks.
-- **Deterministic child workflow IDs** — derive from parent ID + chunk index. Enables idempotent replays.
-- **Set timeouts on children** — use `WorkflowExecutionTimeout`. Without it, a stuck child blocks the parent indefinitely.
-- **Handle partial failures** — decide upfront: fail the entire batch or collect partial results.

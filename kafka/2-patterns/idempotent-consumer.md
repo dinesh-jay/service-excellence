@@ -12,6 +12,25 @@ Kafka guarantees at-least-once delivery. Duplicates happen during consumer group
 
 Use a **deduplication store** — a database table with a unique constraint on the message identifier.
 
+For every incoming message:
+
+1. Extract the message ID (from a Kafka header or a field in the payload — prefer headers).
+2. Check the dedup table. If the ID exists, skip.
+3. Process the business logic and insert into the dedup table **in the same database transaction**.
+4. Manually commit the Kafka offset.
+
+## Key Configuration
+
+- Disable auto-commit — you control when offsets commit.
+- Set `isolation-level: read_committed` — only read committed transactional messages.
+- Use `ack-mode: manual` — acknowledge after successful processing.
+
+---
+
+## Code
+
+### Deduplication Table
+
 ```sql
 CREATE TABLE processed_messages (
     message_id  VARCHAR(255) PRIMARY KEY,
@@ -19,12 +38,7 @@ CREATE TABLE processed_messages (
 );
 ```
 
-For every incoming message:
-
-1. Extract the message ID (from a Kafka header or a field in the payload — prefer headers).
-2. Check the dedup table. If the ID exists, skip.
-3. Process the business logic and insert into the dedup table **in the same database transaction**.
-4. Manually commit the Kafka offset.
+### Consumer with Deduplication
 
 ```kotlin
 @KafkaListener(topics = ["orders"])
@@ -49,7 +63,7 @@ fun consume(record: ConsumerRecord<String, OrderEvent>, ack: Acknowledgment) {
 }
 ```
 
-## Key Configuration
+### Spring Kafka Configuration
 
 ```yaml
 spring:

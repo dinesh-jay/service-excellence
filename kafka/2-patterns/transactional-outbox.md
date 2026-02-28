@@ -10,7 +10,19 @@ Dual writes — saving to the database and publishing to Kafka — are not atomi
 
 ## How
 
-Create an outbox table:
+Create an outbox table. In your service method, persist the business entity and insert an outbox row in the same `@Transactional` block. A poller picks up unpublished rows and sends them to Kafka.
+
+**Two approaches:** polling-based (simple, good enough for most) vs CDC-based (Debezium, lower latency). Start with polling.
+
+## Key Detail
+
+Do not delete outbox rows after publishing. Mark them as published (`published_at = now()`). This preserves an audit trail and enables replay during incident recovery.
+
+---
+
+## Code
+
+### Outbox Table
 
 ```sql
 CREATE TABLE outbox_events (
@@ -24,7 +36,7 @@ CREATE TABLE outbox_events (
 );
 ```
 
-In your service method, persist the business entity and insert an outbox row in the same `@Transactional` block:
+### Service Method — Write Business Entity + Outbox Row
 
 ```kotlin
 @Transactional
@@ -42,7 +54,7 @@ fun createOrder(customerId: String, amount: Double): Order {
 }
 ```
 
-A poller picks up unpublished rows and sends them to Kafka:
+### Poller — Publish Pending Events
 
 ```kotlin
 @Scheduled(fixedDelay = 5000)
@@ -57,9 +69,3 @@ fun publishPendingEvents() {
     }
 }
 ```
-
-**Two approaches:** polling-based (simple, good enough for most) vs CDC-based (Debezium, lower latency). Start with polling.
-
-## Key Detail
-
-Do not delete outbox rows after publishing. Mark them as published (`published_at = now()`). This preserves an audit trail and enables replay during incident recovery.

@@ -16,7 +16,41 @@ Temporal server exposes Prometheus metrics. Key metrics to monitor:
 
 ### SDK Metrics
 
-Enable Micrometer metrics in the Temporal SDK:
+Enable Micrometer metrics in the Temporal SDK to expose client-side metrics.
+
+### Alerting Rules
+
+- Workflow task schedule-to-start latency > 5s — workers cannot keep up.
+- Activity schedule-to-start latency > 30s — scale activity workers.
+- Failed workflow rate > 0 — investigate root cause.
+- Workflow execution time > expected SLA — child workflows or activities are slow.
+
+## Health Checks
+
+Check Temporal server connectivity via `getSystemInfo` on the blocking stub. Return `Health.up()` on success, `Health.down(e)` on failure.
+
+## Temporal UI
+
+The Temporal UI (`temporalio/ui`) provides:
+- Workflow execution list with status filters
+- Detailed execution history (every event: activity scheduled, completed, failed)
+- Child workflow navigation from parent
+- Signal and query interfaces for running workflows
+- Workflow termination and cancellation
+
+Run locally: `docker run -p 8080:8080 -e TEMPORAL_ADDRESS=host.docker.internal:7233 temporalio/ui`
+
+## Logging Best Practices
+
+- Use `Workflow.getLogger()` inside workflows — not `LoggerFactory`. Temporal's logger is replay-aware and suppresses duplicate log entries during replay.
+- Log at activity boundaries: start, success, failure.
+- Include workflow ID and run ID in structured log fields for correlation.
+
+---
+
+## Code
+
+### SDK Metrics Setup
 
 ```kotlin
 val stubs = WorkflowServiceStubs.newServiceStubs(
@@ -27,14 +61,7 @@ val stubs = WorkflowServiceStubs.newServiceStubs(
 )
 ```
 
-### Alerting Rules
-
-- Workflow task schedule-to-start latency > 5s — workers cannot keep up.
-- Activity schedule-to-start latency > 30s — scale activity workers.
-- Failed workflow rate > 0 — investigate root cause.
-- Workflow execution time > expected SLA — child workflows or activities are slow.
-
-## Health Checks
+### Health Indicator
 
 ```kotlin
 @Component
@@ -53,20 +80,3 @@ class TemporalHealthIndicator(
     }
 }
 ```
-
-## Temporal UI
-
-The Temporal UI (`temporalio/ui`) provides:
-- Workflow execution list with status filters
-- Detailed execution history (every event: activity scheduled, completed, failed)
-- Child workflow navigation from parent
-- Signal and query interfaces for running workflows
-- Workflow termination and cancellation
-
-Run locally: `docker run -p 8080:8080 -e TEMPORAL_ADDRESS=host.docker.internal:7233 temporalio/ui`
-
-## Logging Best Practices
-
-- Use `Workflow.getLogger()` inside workflows — not `LoggerFactory`. Temporal's logger is replay-aware and suppresses duplicate log entries during replay.
-- Log at activity boundaries: start, success, failure.
-- Include workflow ID and run ID in structured log fields for correlation.

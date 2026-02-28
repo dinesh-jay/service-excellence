@@ -12,6 +12,21 @@ Poison pills happen: malformed payloads, breaking schema changes, transient down
 
 Use Spring Kafka's `DefaultErrorHandler` with `DeadLetterPublishingRecoverer`. After exhausting retries, the failed message is published to `<original-topic>.DLT` with headers preserving the original topic, partition, offset, and exception.
 
+Let exceptions propagate from the consumer to the error handler. Set up a separate DLT consumer to log and alert on failed messages.
+
+## Key Decisions
+
+- **Retry count:** 3 is a sane default.
+- **Backoff:** Exponential (1s, 2s, 4s).
+- **Non-retryable exceptions:** Deserialization errors will never succeed — skip retries.
+- **DLT monitoring:** Alert when DLT consumer lag > 0. Build replay tooling.
+
+---
+
+## Code
+
+### Error Handler Bean
+
 ```kotlin
 @Bean
 fun errorHandler(kafkaTemplate: KafkaTemplate<Any, Any>): DefaultErrorHandler {
@@ -29,7 +44,7 @@ fun errorHandler(kafkaTemplate: KafkaTemplate<Any, Any>): DefaultErrorHandler {
 }
 ```
 
-Consumer — let exceptions propagate to the error handler:
+### Consumer
 
 ```kotlin
 @KafkaListener(topics = ["orders"])
@@ -39,7 +54,7 @@ fun consume(event: OrderEvent) {
 }
 ```
 
-DLT consumer — log and alert on failed messages:
+### DLT Consumer
 
 ```kotlin
 @KafkaListener(topics = ["orders.DLT"])
@@ -50,10 +65,3 @@ fun consumeDlt(record: ConsumerRecord<String, ByteArray>) {
         originalTopic, exception, String(record.value()))
 }
 ```
-
-## Key Decisions
-
-- **Retry count:** 3 is a sane default.
-- **Backoff:** Exponential (1s, 2s, 4s).
-- **Non-retryable exceptions:** Deserialization errors will never succeed — skip retries.
-- **DLT monitoring:** Alert when DLT consumer lag > 0. Build replay tooling.

@@ -11,7 +11,24 @@ An opinionated auto-configuration for production Kafka usage with Spring Boot 4.
 - **Micrometer metrics** — `KafkaClientMetrics` auto-registered.
 - **Idempotency support** — interface and JPA-based implementation for dedup checking.
 
-## Configuration
+## Opinionated Defaults
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| `enable.auto.commit` | `false` | Prevents offset commit before processing completes |
+| `ack-mode` | `MANUAL` | Explicit offset control |
+| `isolation.level` | `read_committed` | Ignores uncommitted transactional messages |
+| Retry count | 3 | Enough for transient failures, not enough to block on poison pills |
+| Backoff | Exponential 1s/2s/4s | Gives downstream time to recover |
+| DLT | Enabled | Failed messages are preserved, not dropped |
+
+All beans are `@ConditionalOnMissingBean`. Define your own to replace defaults.
+
+---
+
+## Code
+
+### Configuration Properties
 
 ```kotlin
 @ConfigurationProperties(prefix = "app.kafka")
@@ -24,7 +41,7 @@ data class KafkaStarterProperties(
 )
 ```
 
-## Auto-Configuration
+### Auto-Configuration
 
 ```kotlin
 @AutoConfiguration
@@ -57,7 +74,7 @@ class KafkaStarterAutoConfiguration {
 }
 ```
 
-## Idempotency Support
+### Idempotency Support
 
 ```kotlin
 interface IdempotencyChecker {
@@ -71,7 +88,7 @@ class JpaIdempotencyChecker(
 ) : IdempotencyChecker { ... }
 ```
 
-## Override Defaults
+### Override Defaults
 
 ```yaml
 app:
@@ -83,16 +100,3 @@ app:
     trusted-packages:
       - com.myapp.events
 ```
-
-## Opinionated Defaults
-
-| Setting | Value | Why |
-|---------|-------|-----|
-| `enable.auto.commit` | `false` | Prevents offset commit before processing completes |
-| `ack-mode` | `MANUAL` | Explicit offset control |
-| `isolation.level` | `read_committed` | Ignores uncommitted transactional messages |
-| Retry count | 3 | Enough for transient failures, not enough to block on poison pills |
-| Backoff | Exponential 1s/2s/4s | Gives downstream time to recover |
-| DLT | Enabled | Failed messages are preserved, not dropped |
-
-All beans are `@ConditionalOnMissingBean`. Define your own to replace defaults.

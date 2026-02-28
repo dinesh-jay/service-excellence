@@ -12,45 +12,6 @@ Without a schema contract, breaking changes are discovered at runtime. A renamed
 
 Use **Avro + Confluent Schema Registry**. The registry stores versioned schemas and enforces compatibility rules before allowing a new schema version to be registered.
 
-Avro schema:
-
-```json
-{
-  "type": "record",
-  "name": "OrderEvent",
-  "namespace": "com.example.schema.avro",
-  "fields": [
-    { "name": "orderId",    "type": "string" },
-    { "name": "customerId", "type": "string" },
-    { "name": "amount",     "type": "double" },
-    { "name": "currency",   "type": "string", "default": "USD" }
-  ]
-}
-```
-
-Producer:
-
-```kotlin
-val event = OrderEvent.newBuilder()
-    .setOrderId("order-1")
-    .setCustomerId("cust-1")
-    .setAmount(99.99)
-    .setCurrency("USD")
-    .build()
-
-kafkaTemplate.send("orders", event.orderId, event)
-```
-
-Consumer:
-
-```kotlin
-@KafkaListener(topics = ["orders"])
-fun consume(event: OrderEvent) {
-    log.info("Consumed: id={} customer={} amount={} currency={}",
-        event.orderId, event.customerId, event.amount, event.currency)
-}
-```
-
 ### Compatibility Types
 
 | Mode | Rule | Use When |
@@ -76,3 +37,46 @@ fun consume(event: OrderEvent) {
 ## Without Avro
 
 Embed a `version` field in the JSON payload. Use a versioned DTO hierarchy with a deserializer chain that tries the latest version first.
+
+---
+
+## Code
+
+### Avro Schema
+
+```json
+{
+  "type": "record",
+  "name": "OrderEvent",
+  "namespace": "com.example.schema.avro",
+  "fields": [
+    { "name": "orderId",    "type": "string" },
+    { "name": "customerId", "type": "string" },
+    { "name": "amount",     "type": "double" },
+    { "name": "currency",   "type": "string", "default": "USD" }
+  ]
+}
+```
+
+### Producer
+
+```kotlin
+val event = OrderEvent.newBuilder()
+    .setOrderId("order-1")
+    .setCustomerId("cust-1")
+    .setAmount(99.99)
+    .setCurrency("USD")
+    .build()
+
+kafkaTemplate.send("orders", event.orderId, event)
+```
+
+### Consumer
+
+```kotlin
+@KafkaListener(topics = ["orders"])
+fun consume(event: OrderEvent) {
+    log.info("Consumed: id={} customer={} amount={} currency={}",
+        event.orderId, event.customerId, event.amount, event.currency)
+}
+```
